@@ -1,18 +1,13 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef enum {false, true} bool;
+typedef struct history_node {
+	char name[101];
+	history_node* link;
+}history_node;
 
-bool run(char* arg);
 void help();
 void dir();
 void quit();
 void history();
-void dump();
-void edit();
-void fill();
-void reset();
-
-//void opcode mnemonic();
-//void opcodelist();
 

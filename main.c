@@ -1,9 +1,8 @@
 #include "main.h"
 
-bool run(char* arg);
+char arg[ARG_LEN];	
 
 int main() {
-	char arg[ARG_LEN];	
 
 	while(1) {
 		printf("sicsim> ");
@@ -13,10 +12,4 @@ int main() {
 	}
 
 	return 0;
-}
-
-
-
-bool run(char* arg) {
-	return true;
 }

@@ -11,7 +11,7 @@
 #define ARG_LEN 101
 #define COMMAND_NUM 17
 
-typedef enum {false, true} bool;
+//declare commands list to classify commands easier so that struct run() function clearly.
 typedef enum {
 	h_,
 	help_,
@@ -32,13 +32,18 @@ typedef enum {
 	opcodelist_
 } command_list;
 
+//extern declaration for array in shell.c
 extern const char* valid_commands[COMMAND_NUM];
 
+//node structure and head pointer for history functions
 typedef struct history_node {
 	char name[101];
 	struct history_node* next;
 }history_node;
 
+struct history_node* history_head = NULL;
+
+//functions
 void help();
 void dir();
 void quit();

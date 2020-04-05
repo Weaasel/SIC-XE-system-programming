@@ -1,7 +1,9 @@
 #include "opcode.h"
 
+//declare 20-sized hash table
 struct hash_node* hash_head[20] = {NULL};
 
+//insert new hash node to matched hash index
 void add_hash_node(struct hash_node* new_) {
 	int idx = (new_->name[0] - 'A') % 20;
 	if(hash_head[idx] == NULL) hash_head[idx] = new_;
@@ -15,6 +17,7 @@ void add_hash_node(struct hash_node* new_) {
 	return;
 }
 
+//initialize opcode table with given text file "opcode.txt"
 void init_optable() {
 	int i;
 	for(i = 0; i < 20; i++) hash_head[i] = NULL;
@@ -39,7 +42,7 @@ void init_optable() {
 	return;
 }
 
-
+//output matching opcode with input opcode name
 int opcode(char* str) {
 	if(str == NULL){
 		undefined_argument();
@@ -58,6 +61,7 @@ int opcode(char* str) {
 	return ERROR;
 }
 
+//print all opcode data in hash table separated with index
 void opcodelist(){
 	int i;
 	for(i = 0; i < 20; i++) {
@@ -73,6 +77,7 @@ void opcodelist(){
 	return;
 }
 
+//before exit program, free all allocated memories used in opcode table
 void clear_optable() {
 	int i;
 	for(i = 0; i < 20; i++) {

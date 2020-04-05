@@ -1,7 +1,6 @@
 #include "shell.h"
 
-struct history_node* history_head = NULL;
-
+//constant string array for valid shell commands to match in run()
 const char* valid_commands[COMMAND_NUM] = {
 	"h",
 	"help",
@@ -22,6 +21,7 @@ const char* valid_commands[COMMAND_NUM] = {
 	"opcodelist"
 };
 
+//print all valid commands with their correct format
 void help() {
 	printf("h[elp]\n");
 	printf("d[ir]\n");
@@ -36,6 +36,7 @@ void help() {
 	return;
 }
 
+//print list of directory / files on current directory
 void dir() {
 	struct dirent **namelist;
 	int count, idx, len;
@@ -66,10 +67,12 @@ void dir() {
 	return;
 }
 
+//nothing to do in here to quit program
 void quit() {
 	return;
 }
 
+//add command history to history head
 void add_history(char* arg) {
 	struct history_node* new_ = (struct history_node*)malloc(sizeof(history_node));
 	new_->next = NULL;
@@ -85,6 +88,7 @@ void add_history(char* arg) {
 	return;
 }
 
+//remove last history node. This is for exceptions(invalid commands)
 void remove_history_tail() {
 	if(history_head==NULL) return;
 	if(history_head->next == NULL) {
@@ -102,6 +106,7 @@ void remove_history_tail() {
 	return;
 }
 
+//clear all allocated history memories before exit program
 void clear_history() {
 	struct history_node* tmp;
 	while(history_head != NULL) {
@@ -112,6 +117,7 @@ void clear_history() {
 	return;
 }
 
+//print valid commands history with indices
 void history() {
 	int idx = 1;
 	struct history_node* tmp = history_head;
@@ -124,26 +130,30 @@ void history() {
 	return;
 }
 
+//convert each character with corresponding hexadecimal value
 int char_to_hex(char c) {
 	if('0' <= c && c <= '9') return c - '0';
 	if('A' <= c && c <= 'F') return c - 'A' + 10;
 	if('a' <= c && c <= 'f') return c - 'a' + 10;
-	return -1;
+	return IMPOSSIBLE;
 }
 
-//have to edit. 예외처리
+//convert string with corresponding hexadecimal value
 int str_to_hex(char* str) {
 	if(str==NULL) return EMPTY;
 
-	int res = 0;
+	int res = 0, tmp;
 	int i;
 	for(i = 0; i < (int)strlen(str); i++) {
 		res *= 16;
-		res += char_to_hex(str[i]);
+		tmp = char_to_hex(str[i]);
+		if(tmp == IMPOSSIBLE) return IMPOSSIBLE;
+		res += tmp;
 	}
 	return res;
 }
 
+//math string wuth corresponding command number. This is for switch statement in run()
 int make_command(char* str) {
 	int i;
 	for(i=0;i<COMMAND_NUM;i++) {
@@ -152,6 +162,7 @@ int make_command(char* str) {
 	return IMPOSSIBLE;
 }
 
+//Tokenize whole argument with command and parameters, then execute corresponding job.
 bool run(char* arg) {
 	char *command, *param1, *param2, *param3;
 	char arg_cpy[ARG_LEN];
@@ -187,18 +198,22 @@ bool run(char* arg) {
 			return true;
 		case du_:
 		case dump_:
-			dump(p1, p2);
+			err = dump(p1, p2);
+			if(err == ERROR) remove_history_tail();
 			return true;
 		case e_:
 		case edit_:
-			edit(p1, p2);
+			err = edit(p1, p2);
+			if(err == ERROR) remove_history_tail();
 			return true;
 		case f_:
 		case fill_:
-			fill(p1, p2, p3);
+			err = fill(p1, p2, p3);
+			if(err == ERROR) remove_history_tail();
 			return true;
 		case reset_:
-			reset();
+			err = reset();
+			if(err == ERROR) remove_history_tail();
 			return true;
 		case opcode_:
 			err = opcode(param1);
@@ -212,7 +227,5 @@ bool run(char* arg) {
 			undefined_command();
 			return true;
 	}
-	//printf("%d\n%d\n%d\n%d\n", str_to_hex(command), str_to_hex(param1), str_to_hex(param2), str_to_hex(param3));
-	//printf("%s\n%s\n%s\n%s\n", command, param1, param2, param3);
 	return true;
 }

@@ -1,8 +1,8 @@
 #include "shell.h"
 
-struct history_node* history_root = NULL;
+struct history_node* history_head = NULL;
 
-const char* commands[COMMAND_NUM] = {
+const char* valid_commands[COMMAND_NUM] = {
 	"h",
 	"help",
 	"d",
@@ -33,6 +33,7 @@ void help() {
 	printf("reset\n");
 	printf("opcode mnemonic\n");
 	printf("opcodelist\n");
+	return;
 }
 
 void dir() {
@@ -66,29 +67,79 @@ void dir() {
 }
 
 void quit() {
+	return;
 }
 
-void add_history(struct history_node* root, char* arg) {
+void add_history(char* arg) {
+	struct history_node* new_ = (struct history_node*)malloc(sizeof(history_node));
+	new_->next = NULL;
+	strcpy(new_->name, arg);
+	if(history_head==NULL) history_head = new_;
+	else {
+		struct history_node* tail = history_head;
+		while(tail->next != NULL) {
+			tail = tail->next;
+		}
+		tail->next = new_;
+	}
+	return;
 }
-void remove_tail_history(struct history_node* root) {
+
+void remove_history_tail() {
+	if(history_head==NULL) return;
+	if(history_head->next == NULL) {
+		free(history_head);
+		history_head = NULL;
+		return;
+	}
+	struct history_node* tmp;
+	tmp = history_head;
+	while((tmp->next)->next != NULL) {
+		tmp = tmp->next;
+	}
+	free(tmp->next);
+	tmp->next = NULL;
+	return;
 }
-void clear_history(struct history_node* root) {
+
+void clear_history() {
+	struct history_node* tmp;
+	while(history_head != NULL) {
+		tmp = history_head;
+		history_head = history_head->next;
+		free(tmp);
+	}
+	return;
 }
 
 void history() {
-
-	printf("history\n");	
+	int idx = 1;
+	struct history_node* tmp = history_head;
+	while(tmp) {
+		printf("%3d ", idx);
+		printf("%s\n", tmp->name);
+		idx++;
+		tmp = tmp->next;
+	}
+	return;
 }
 
-//have to edit
+int char_to_hex(char c) {
+	if('0' <= c && c <= '9') return c - '0';
+	if('A' <= c && c <= 'F') return c - 'A' + 10;
+	if('a' <= c && c <= 'f') return c - 'a' + 10;
+	return -1;
+}
+
+//have to edit. 예외처리
 int str_to_hex(char* str) {
-	if(str==NULL) return IMPOSSIBLE;
+	if(str==NULL) return EMPTY;
+
 	int res = 0;
 	int i;
-	for(i=0;i<(int)strlen(str);i++) {
+	for(i = 0; i < (int)strlen(str); i++) {
 		res *= 16;
-		if(str[i]>=65) res += str[i] - 'A' + 10;
-		else res += str[i] - '0';
+		res += char_to_hex(str[i]);
 	}
 	return res;
 }
@@ -96,7 +147,7 @@ int str_to_hex(char* str) {
 int make_command(char* str) {
 	int i;
 	for(i=0;i<COMMAND_NUM;i++) {
-		if(!strcmp(str, commands[i])) return i;
+		if(!strcmp(str, valid_commands[i])) return i;
 	}
 	return IMPOSSIBLE;
 }
@@ -104,9 +155,9 @@ int make_command(char* str) {
 bool run(char* arg) {
 	char *command, *param1, *param2, *param3;
 	char arg_cpy[ARG_LEN];
-	int p1, p2, p3;
+	int p1, p2, p3, err;
 	strcpy(arg_cpy, arg);
-	add_history(history_root, arg_cpy);
+	add_history(arg_cpy);
 
 	command = strtok(arg, " ");
 	param1 = strtok(NULL, " ");
@@ -115,9 +166,8 @@ bool run(char* arg) {
 	p1 = str_to_hex(param1);
 	p2 = str_to_hex(param2);
 	p3 = str_to_hex(param3);
-
+	
 	int com = make_command(command);
-	printf("%s\n", com);
 	switch(com) {
 		case h_:
 		case help_:
@@ -151,13 +201,14 @@ bool run(char* arg) {
 			reset();
 			return true;
 		case opcode_:
-			opcode(param1);
+			err = opcode(param1);
+			if(err == ERROR) remove_history_tail();
 			return true;
 		case opcodelist_:
 			opcodelist();
 			return true;
 		default:
-			remove_tail_history(history_root);
+			remove_history_tail();
 			undefined_command();
 			return true;
 	}

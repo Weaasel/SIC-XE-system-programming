@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <dirent.h>
 #include <sys/stat.h>
 #include "memory.h"
 #include "opcode.h"
 #include "error.h"
 #define IMPOSSIBLE 2000000000
+#define EMPTY -1
 #define ARG_LEN 101
 #define COMMAND_NUM 17
 
@@ -30,7 +32,7 @@ typedef enum {
 	opcodelist_
 } command_list;
 
-extern const char* commands[COMMAND_NUM];
+extern const char* valid_commands[COMMAND_NUM];
 
 typedef struct history_node {
 	char name[101];
@@ -40,9 +42,9 @@ typedef struct history_node {
 void help();
 void dir();
 void quit();
-void add_history(struct history_node* root, char* arg);
-void remove_tail_history(struct history_node* root);
-void clear_history(struct history_node* root);
+void add_history(char* arg);
+void remove_history_tail();
+void clear_history();
 void history();
 int str_to_hex(char* str);
 int make_command(char* str);

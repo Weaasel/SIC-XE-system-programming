@@ -17,3 +17,9 @@ void out_of_range() {
 	printf("Error : Value Out of Range!\n");
 	return;
 }
+
+//Error occurred when start memory address is bigger than end
+void start_bigger_than_end() {
+	printf("Error : start addr is bigger than end addr!\n");
+	return;
+}

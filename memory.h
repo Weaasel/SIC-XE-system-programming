@@ -11,8 +11,4 @@ bool is_valid_addr(int addr);
 int dump(int start, int end);
 int edit(int idx, int val);
 int fill(int start, int end, int val);
-int reset();
-
-//declare 1MB memory and last address for dump function
-char mem[MAX_ADDR + 1] = {0};
-int last_addr = -1;
+void reset();

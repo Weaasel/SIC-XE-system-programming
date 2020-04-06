@@ -21,6 +21,8 @@ const char* valid_commands[COMMAND_NUM] = {
 	"opcodelist"
 };
 
+struct history_node* history_head = NULL;
+
 //print all valid commands with their correct format
 void help() {
 	printf("h[elp]\n");
@@ -166,7 +168,7 @@ int make_command(char* str) {
 bool run(char* arg) {
 	char *command, *param1, *param2, *param3;
 	char arg_cpy[ARG_LEN];
-	int p1, p2, p3, err;
+	int p1, p2, p3, err, len1 = 0, len2 = 0;
 	strcpy(arg_cpy, arg);
 	add_history(arg_cpy);
 
@@ -174,10 +176,15 @@ bool run(char* arg) {
 	param1 = strtok(NULL, " ");
 	param2 = strtok(NULL, " ");
 	param3 = strtok(NULL, " ");
+	if(param1 != NULL) len1 = strlen(param1);
+	if(param2 != NULL) len2 = strlen(param2);
+	if(len1>0 && param1[len1-1]==',') param1[len1-1] = 0;
+	if(len2>0 && param2[len2-1]==',') param2[len2-1] = 0;
+
+
 	p1 = str_to_hex(param1);
 	p2 = str_to_hex(param2);
 	p3 = str_to_hex(param3);
-	
 	int com = make_command(command);
 	switch(com) {
 		case h_:
@@ -212,8 +219,7 @@ bool run(char* arg) {
 			if(err == ERROR) remove_history_tail();
 			return true;
 		case reset_:
-			err = reset();
-			if(err == ERROR) remove_history_tail();
+			reset();
 			return true;
 		case opcode_:
 			err = opcode(param1);

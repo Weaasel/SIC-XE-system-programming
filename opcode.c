@@ -22,7 +22,7 @@ void init_optable() {
 	int i;
 	for(i = 0; i < 20; i++) hash_head[i] = NULL;
 	char tmp[10];
-	struct File* fp;
+	FILE* fp;
 	fp = fopen("./opcode.txt", "r");
 	if(fp == NULL) {
 		printf("Error : opcode.txt does'nt exist.\n");

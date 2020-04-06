@@ -19,14 +19,14 @@ $make clean
 ## Commands
 
 ```
-$ h[elp]  
-$ d[ir]  
-$ q[uit]  
-$ hi[story]  
-$ du[mp] [start, end]  
-$ e[dit] address, value  
-$ f[ill] start, end, value  
-$ reset  
-$ opcode mnemonic  
-$ opcodelist  
+$ h[elp]    //show all valid commands
+$ d[ir]   //show all files on current directory
+$ q[uit]    //quit and exit program
+$ hi[story]   //show history of valid commands
+$ du[mp] [start, end]   //dump data from 'start' address to 'end' address
+$ e[dit] address, value   //edit corresponding 'address' data with 'value'
+$ f[ill] start, end, value    //fill corresponding data with 'start' and 'end' address with 'value'
+$ reset   //fill whole memory with zero
+$ opcode mnemonic   //output corresponding opcode with input mnemonic
+$ opcodelist    //show all opcode mnemonic list
 ```

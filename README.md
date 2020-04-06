@@ -4,10 +4,16 @@
  * Student ID : 20141303
  * Summary : SIX/XE Machine의 기본 shell 명령어와 memory, opcode 관련 명령어를 수행합니다.
 
-## How to compile the code
+## How to compile
 
 ```
 $ make
+```
+
+## How to run
+
+```
+$ ./20141303.out
 ```
 
 ## How to clean object files and exe

@@ -43,6 +43,7 @@ void add_history(char* arg);
 void remove_history_tail();
 void clear_history();
 void history();
+int char_to_hex(char c);
 int str_to_hex(char* str);
 int make_command(char* str);
 bool run(char* arg);

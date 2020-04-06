@@ -44,10 +44,11 @@ int dump(int start, int end){
 		}
 	}
 
-	//start , end 정해졌고 여기서부터 원칙대로 출력. end = min(end, MAC_ADDR) 해주고.
+	//now we have start and end, will print with format
+	//end = min(end, MAC_ADDR) is required by policy
 	if(end > MAX_ADDR) end = MAX_ADDR;
-	int r_start = start - start%16;
-	int r_end = end - end%16;
+	int r_start = start - start%16; //first row
+	int r_end = end - end%16; //last row
 	int i, j;
 	for(i = r_start; i <= r_end; i += 16) {
 		printf("%05X ", i);

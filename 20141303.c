@@ -1,4 +1,4 @@
-#include "main.h"
+#include "20141303.h"
 
 int main() {
 	//initialize optable before start
@@ -9,7 +9,7 @@ int main() {
 		memset(arg, 0, ARG_LEN);
 		printf("sicsim> ");
 		fgets(arg, ARG_LEN, stdin);
-		arg[(int)strlen(arg) - 1] = 0;
+		arg[(int)strlen(arg) - 1] = 0; //erase '\n'
 		if(!run(arg)) break;
 		printf("\n");
 	}

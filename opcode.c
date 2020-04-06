@@ -5,7 +5,8 @@ struct hash_node* hash_head[20] = {NULL};
 
 //insert new hash node to matched hash index
 void add_hash_node(struct hash_node* new_) {
-	int idx = (new_->name[0] - 'A') % 20;
+	int idx = (new_->name[0] - 'A') % 20; //given hash index depends on 1st Character of name
+	//add new node to tail
 	if(hash_head[idx] == NULL) hash_head[idx] = new_;
 	else {
 		struct hash_node* tail = hash_head[idx];
@@ -28,6 +29,7 @@ void init_optable() {
 		printf("Error : opcode.txt does'nt exist.\n");
 		return;
 	}
+	//read opcode, mnemonic, format of each opcode node
 	while(fscanf(fp, "%s", tmp) != EOF) {
 		struct hash_node* new_ = (struct hash_node*)malloc(sizeof(hash_node));
 		new_->next = NULL;
@@ -48,8 +50,10 @@ int opcode(char* str) {
 		undefined_argument();
 		return ERROR;
 	}
+	//get hash index
 	int idx = (str[0] - 'A') % 20;
 	struct hash_node* tmp = hash_head[idx];
+	//find corresponding node while iterating
 	while(tmp != NULL) {
 		if(!strcmp(tmp->name, str)) {
 			printf("opcode is %s\n", tmp->code);

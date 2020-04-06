@@ -1,7 +1,7 @@
-sicsim.out : main.o shell.o memory.o opcode.o error.o
-	gcc -Wall -o sicsim.out main.o shell.o memory.o opcode.o error.o
-main.o : main.c main.h
-	gcc -Wall -c main.c
+20141303.out : 20141303.o shell.o memory.o opcode.o error.o
+	gcc -Wall -o 20141303.out 20141303.o shell.o memory.o opcode.o error.o
+20141303.o : 20141303.c 20141303.h
+	gcc -Wall -c 20141303.c
 shell.o : shell.c shell.h
 	gcc -Wall -c shell.c
 memory.o : memory.c memory.h
@@ -11,4 +11,4 @@ opcode.o : opcode.c opcode.h
 error.o : error.c error.h
 	gcc -Wall -c error.c
 clean :
-	rm sicsim.out main.o shell.o memory.o opcode.o error.o
+	rm 20141303.out 20141303.o shell.o memory.o opcode.o error.o

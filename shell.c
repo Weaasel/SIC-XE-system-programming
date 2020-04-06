@@ -21,6 +21,7 @@ const char* valid_commands[COMMAND_NUM] = {
 	"opcodelist"
 };
 
+//head node pointer for history list
 struct history_node* history_head = NULL;
 
 //print all valid commands with their correct format
@@ -43,7 +44,8 @@ void dir() {
 	struct dirent **namelist;
 	int count, idx, len;
 	struct stat buf;
-
+	
+	//scan all files in directory
 	if((count = scandir("./", &namelist, NULL, alphasort)) != -1) {
 		for(idx = 0; idx < count; idx++) {
 			char fname[101];
@@ -51,12 +53,15 @@ void dir() {
 			len = strlen(fname);
 			lstat(namelist[idx]->d_name, &buf);
 			
+			//exe file(a.out*)
 			if(fname[len-4] == '.' && fname[len-3] == 'o' && fname[len-2] == 'u' && fname[len-1] == 't') {
 				printf("%s*\n", namelist[idx]->d_name);
 			}
+			//directory(a/)
 			else if(S_ISDIR(buf.st_mode)) {
 				printf("%s/\n", namelist[idx]->d_name);
 			}
+			//regular files
 			else if(S_ISREG(buf.st_mode)) {
 				printf("%s\n", namelist[idx]->d_name);
 			}
@@ -142,6 +147,7 @@ int char_to_hex(char c) {
 
 //convert string with corresponding hexadecimal value
 int str_to_hex(char* str) {
+	//EMPTY means there is no parameter
 	if(str==NULL) return EMPTY;
 
 	int res = 0, tmp;
@@ -149,6 +155,7 @@ int str_to_hex(char* str) {
 	for(i = 0; i < (int)strlen(str); i++) {
 		res *= 16;
 		tmp = char_to_hex(str[i]);
+		//IMPOSSIVLE means incorrect format hexadecimal like YJ
 		if(tmp == IMPOSSIBLE) return IMPOSSIBLE;
 		res += tmp;
 	}
@@ -172,20 +179,23 @@ bool run(char* arg) {
 	strcpy(arg_cpy, arg);
 	add_history(arg_cpy);
 
+	//split argument to command, param1~3, param1~3 can be NULL
 	command = strtok(arg, " ");
 	param1 = strtok(NULL, " ");
 	param2 = strtok(NULL, " ");
 	param3 = strtok(NULL, " ");
+	//for make str_to_hexa easier, erase ','
 	if(param1 != NULL) len1 = strlen(param1);
 	if(param2 != NULL) len2 = strlen(param2);
 	if(len1>0 && param1[len1-1]==',') param1[len1-1] = 0;
 	if(len2>0 && param2[len2-1]==',') param2[len2-1] = 0;
 
-
+	//p1~3 == integer version of param1~3
 	p1 = str_to_hex(param1);
 	p2 = str_to_hex(param2);
 	p3 = str_to_hex(param3);
 	int com = make_command(command);
+	//in switch statement, if some cases return ERROR, we will remove history of its command
 	switch(com) {
 		case h_:
 		case help_:

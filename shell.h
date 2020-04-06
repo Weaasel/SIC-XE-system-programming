@@ -35,7 +35,7 @@ typedef struct history_node {
 	struct history_node* next;
 }history_node;
 
-//functions
+//shell functions
 void help();
 void dir();
 void quit();

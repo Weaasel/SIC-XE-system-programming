@@ -6,7 +6,7 @@
 #include "memory.h"
 #include "opcode.h"
 #define ARG_LEN 101
-#define COMMAND_NUM 17
+#define COMMAND_NUM 20
 
 //declare commands list to classify commands easier so that struct run() function clearly
 typedef enum {
@@ -26,7 +26,10 @@ typedef enum {
 	fill_,
 	reset_,
 	opcode_,
-	opcodelist_
+	opcodelist_,
+	assemble_,
+	type_,
+	symbol_
 } command_list;
 
 //node structure and head pointer for history functions

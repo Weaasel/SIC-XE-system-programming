@@ -18,7 +18,10 @@ const char* valid_commands[COMMAND_NUM] = {
 	"fill",
 	"reset",
 	"opcode",
-	"opcodelist"
+	"opcodelist",
+	"assemble",
+	"type",
+	"symbol"
 };
 
 //head node pointer for history list
@@ -36,6 +39,9 @@ void help() {
 	printf("reset\n");
 	printf("opcode mnemonic\n");
 	printf("opcodelist\n");
+	printf("aseemble filename\n");
+	printf("type filename\n");
+	printf("symbol\n");
 	return;
 }
 
@@ -237,6 +243,15 @@ bool run(char* arg) {
 			return true;
 		case opcodelist_:
 			opcodelist();
+			return true;
+		case assemble_:
+			printf("assemble\n");
+			return true;
+		case type_:
+			printf("type\n");
+			return true;
+		case symbol_:
+			printf("symbol\n");
 			return true;
 		default:
 			remove_history_tail();

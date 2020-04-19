@@ -49,4 +49,5 @@ void history();
 int char_to_hex(char c);
 int str_to_hex(char* str);
 int make_command(char* str);
+int type(char* filename);
 bool run(char* arg);

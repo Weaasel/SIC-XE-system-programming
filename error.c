@@ -23,3 +23,8 @@ void start_bigger_than_end() {
 	printf("Error : start addr is bigger than end addr!\n");
 	return;
 }
+
+//Error occurs by invalid filename(ex. no file with name)
+void invalid_filename() {
+	printf("Error : Invalid filename!\n");
+}

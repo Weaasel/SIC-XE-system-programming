@@ -13,3 +13,4 @@ void undefined_command();
 void undefined_argument();
 void out_of_range();
 void start_bigger_than_end();
+void invalid_filename();

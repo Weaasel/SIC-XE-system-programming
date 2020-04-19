@@ -39,7 +39,7 @@ void help() {
 	printf("reset\n");
 	printf("opcode mnemonic\n");
 	printf("opcodelist\n");
-	printf("aseemble filename\n");
+	printf("assemble filename\n");
 	printf("type filename\n");
 	printf("symbol\n");
 	return;
@@ -177,6 +177,19 @@ int make_command(char* str) {
 	return IMPOSSIBLE;
 }
 
+//print out file. If there is no file with given name, print error.
+int type(char* filename) {
+	FILE* fp;
+	fp = fopen(filename, "r");
+	if(fp == NULL) {
+		invalid_filename();
+		return ERROR;
+	}
+	char c;
+	while(fscanf(fp, "%c", &c) != EOF) printf("%c", c);
+	return SUCCESS;
+}
+
 //Tokenize whole argument with command and parameters, then execute corresponding job.
 bool run(char* arg) {
 	char *command, *param1, *param2, *param3;
@@ -248,7 +261,8 @@ bool run(char* arg) {
 			printf("assemble\n");
 			return true;
 		case type_:
-			printf("type\n");
+			err = type(param1);
+			if(err == ERROR) remove_history_tail();
 			return true;
 		case symbol_:
 			printf("symbol\n");

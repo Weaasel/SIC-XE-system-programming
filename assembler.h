@@ -14,6 +14,7 @@ typedef struct line_node {
 	int LOC;
 	int PC;
 	int format;
+	int object_len;
 	char raw[100];
 	bool is_symbol;
 	bool is_start;
@@ -30,6 +31,7 @@ typedef struct line_node {
 	struct line_node* next;
 }line_node;
 
+bool in_range(int disp);
 int register_num(char*c );
 void clear_symbol(struct symbol_node* root);
 void clear_line(struct line_node* root);
@@ -40,8 +42,6 @@ int symbol(void);
 void insert_line(struct line_node* new_);
 int pass1(char* filename);
 int pass2(char* filename);
-
-int assemble(char* filename);
 void make_lst(char* filename);
 void make_obj(char* filename);
-
+int assemble(char* filename);

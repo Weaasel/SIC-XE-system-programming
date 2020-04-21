@@ -9,11 +9,17 @@ struct symbol_node* sym_tmp = NULL;
 struct line_node* line_tmp = NULL;
 
 int start_addr = 0;
+int base_LOC = 0;
 int LOCCTR = 0;
 int line = 5;
 int prog_len = 0;
 
+bool in_range(int disp) {
+	return disp >= -2048 && disp <= 2047;
+}
+
 int register_num(char* c) {
+	if(c == NULL) return ERROR;
 	if(!strcmp(c, "A")) return 0;
 	if(!strcmp(c, "X")) return 1;
 	if(!strcmp(c, "L")) return 2;
@@ -149,12 +155,21 @@ int pass1(char* filename) {
 		
 		//initialize new line node
 		struct line_node* new_ = (struct line_node*)malloc(sizeof(line_node));
-
+	
+		int j;
 		new_->next = NULL;
 		new_->idx = line;
 		new_->LOC = 0;
 		new_->PC = 0;
 		new_->format = 0;
+		new_->object_len = 0;
+		for(j=0;j<100;j++) new_->raw[j] = 0;
+		for(j=0;j<10;j++) new_->param1[j] = 0;
+		for(j=0;j<10;j++) new_->param2[j] = 0;
+		for(j=0;j<10;j++) new_->param3[j] = 0;
+		for(j=0;j<10;j++) new_->param4[j] = 0;
+		for(j=0;j<8;j++) new_->object_code[j] = 0;
+		//may have to debug
 		
 		if(raw_line != NULL) strcpy(new_->raw, raw_line);
 		if(param1 != NULL) strcpy(new_->param1, param1);
@@ -169,7 +184,6 @@ int pass1(char* filename) {
 		new_->is_const = false;
 		new_->is_var = false;
 	
-	printf("%s\n", param1);
 		if(!strcmp(param1, "END")) {
 			new_->is_end = true;
 			prog_len = LOCCTR - start_addr;
@@ -184,6 +198,7 @@ int pass1(char* filename) {
 			new_->is_start = true;
 			start_addr = str_to_hex(param3);
 			line = 5;
+			base_LOC = 0;
 			new_->idx = line;
 			LOCCTR = start_addr;
 			insert_line(new_);
@@ -256,7 +271,6 @@ int pass1(char* filename) {
 			}
 			//no symbol
 			else {
-				printf("no symbol\n");
 				if(get_format(param1) != ERROR) {
 					new_->is_opcode = true;
 					new_->LOC = LOCCTR;
@@ -308,6 +322,389 @@ int pass1(char* filename) {
 
 //pass2 : make opcode for each line with corresponding line data and symbol table
 int pass2(char* filename) {
+	struct line_node* tmp = line_tmp;
+	while(tmp != NULL) {
+		//have symbol
+		if(tmp->is_symbol) {
+			//no need to make object code
+			if(tmp->is_start || tmp->is_base || tmp->is_end || tmp->is_var) {
+				if(tmp->is_base) {
+					base_LOC = find_symbol(tmp->param3);	
+				}
+				tmp->object_len = 0;
+				tmp = tmp->next;
+				continue;
+			}
+			if(tmp->is_opcode) {
+				tmp->object_len = (tmp->format) * 2;
+				if(tmp->format == 1) {
+					int opval = opname_to_hex(tmp->param2);
+					tmp->object_code[0] = opval / 16;
+					tmp->object_code[1] = opval % 16;
+				}
+				else if(tmp->format == 2) {
+					int opval = opname_to_hex(tmp->param2);
+					int r1 = register_num(tmp->param3);
+					int r2 = register_num(tmp->param4);
+					tmp->object_code[0] = opval / 16;
+					tmp->object_code[1] = opval % 16;
+					tmp->object_code[2] = r1 == ERROR ? 0 : r1;
+					tmp->object_code[3] = r2 == ERROR ? 0 : r2;
+				}
+				else if(tmp->format == 3) {
+					int len = strlen(tmp->param2);
+					if(tmp->param2[len-1] == ',') tmp->param2[len-1] = 0;
+					len = strlen(tmp->param3);
+					if(tmp->param3[len-1] == ',') tmp->param3[len-1] = 0;
+					int opval = opname_to_hex(tmp->param2);
+					int disp;
+					tmp->object_code[0] = opval / 16;
+					tmp->object_code[1] = opval % 16;
+					
+					int n = 0, i = 0, x = 0, b = 0, p = 0, e = 0;
+					bool flag = false;
+					//check addressing mode
+
+					//immediate addressing
+					if(tmp->param3[0] == '#') {
+						n = 0, i = 1;
+						disp = find_symbol(tmp->param3+1);
+						if(disp == ERROR) {
+							disp = str_to_int(tmp->param3+1);
+							flag = true;
+						}
+					}
+					//indirect addressing
+					else if(tmp->param3[0] == '@') {
+						n = 1, i = 0;
+						disp = find_symbol(tmp->param3+1);
+						if(disp == ERROR) {
+							disp = str_to_int(tmp->param3+1);
+							flag = true;
+						}
+					}
+					//simple addressing
+					else {
+						n = 1, i = 1;
+						disp = find_symbol(tmp->param3);
+						if(disp == ERROR){
+							disp = str_to_int(tmp->param3);
+							flag = true;
+						}
+					}
+					
+					if(!flag) {
+						disp -= tmp->PC;
+						if(in_range(disp)) {
+							p = 1;
+						}
+						else {
+							disp += tmp->PC;
+							disp -= base_LOC;
+							b = 1;
+						}
+					}
+					if(tmp->param4[0] == 'X') {
+						x = 1;
+					}
+				
+					if(disp < 0 ) disp += 4096;
+
+					tmp->object_code[1] += n * 2;
+					tmp->object_code[1] += i;
+
+					tmp->object_code[2] = 8*x + 4*b + 2*p + e;
+					tmp->object_code[3] = disp / 256;
+					disp -= tmp->object_code[3] * 256;
+					tmp->object_code[4] = disp / 16;
+					disp -= tmp->object_code[4] * 16;
+					tmp->object_code[5] = disp;
+				}
+				else if(tmp->format == 4) {
+					int len = strlen(tmp->param2);
+					if(tmp->param2[len-1] == ',') tmp->param2[len-1] = 0;
+					len = strlen(tmp->param3);
+					if(tmp->param3[len-1] == ',') tmp->param3[len-1] = 0;
+					int opval = opname_to_hex(tmp->param2+1);
+					int disp;
+					tmp->object_code[0] = opval / 16;
+					tmp->object_code[1] = opval % 16;
+					
+					int n = 0, i = 0, x = 0, b = 0, p = 0, e = 0;
+					//check addressing mode
+					//immediate addressing
+					if(tmp->param3[0] == '#') {
+						n = 0, i = 1;
+						disp = find_symbol(tmp->param3+1);
+						if(disp == ERROR) disp = str_to_int(tmp->param3+1);
+					}
+					//indirect addressing
+					else if(tmp->param3[0] == '@') {
+						n = 1, i = 0;
+						disp = find_symbol(tmp->param3+1);
+						if(disp == ERROR) disp = str_to_int(tmp->param3+1);
+					}
+					//simple addressing
+					else {
+						n = 1, i = 1;
+						disp = find_symbol(tmp->param3);
+						if(disp == ERROR) disp = str_to_int(tmp->param3);
+					}
+					if(tmp->param4[0] == 'X') {
+						x = 1;
+					}
+					
+					e = 1;
+					tmp->object_code[1] += n * 2;
+					tmp->object_code[1] += i;
+					tmp->object_code[2] = 8*x + 4*b + 2*p + e;
+					
+					tmp->object_code[3] = disp / 65536;
+					disp -= tmp->object_code[3] * 65536;
+					tmp->object_code[4] = disp / 4096;
+					disp -= tmp->object_code[4] * 4096;
+					tmp->object_code[5] = disp / 256;
+					disp -= tmp->object_code[5] * 256;
+					tmp->object_code[6] = disp / 16;
+					disp -= tmp->object_code[6] * 16;
+					tmp->object_code[7] = disp;
+				}
+			}
+			//constants
+			else {
+				int disp;
+				//BYTE
+				if(!strcmp(tmp->param2, "BYTE")) {
+					if(tmp->param3[0] == 'C') {
+						tmp->object_len = 6;
+						int c1 = tmp->param3[2];
+						int c2 = tmp->param3[3];
+						int c3 = tmp->param3[4];
+
+						tmp->object_code[0] = c1/16;
+						tmp->object_code[1] = c1%16;
+						tmp->object_code[2] = c2/16;
+						tmp->object_code[3] = c2%16;
+						tmp->object_code[4] = c3/16;
+						tmp->object_code[5] = c3%16;
+						
+					}
+					else if(tmp->param3[0] == 'X') {
+						tmp->object_len = 2;
+						tmp->object_code[0] = char_to_hex(tmp->param3[2]);
+						tmp->object_code[1] = char_to_hex(tmp->param3[3]);
+					}
+				}
+				//WORD
+				else {
+					tmp->object_len = 6;
+					disp = str_to_hex(tmp->param3);
+					tmp->object_code[0] = disp / 1048576;
+					disp -= tmp->object_code[0] * 1048576;
+					tmp->object_code[1] = disp / 65536;
+					disp -= tmp->object_code[1] * 65536;
+					tmp->object_code[2] = disp / 4096;
+					disp -= tmp->object_code[2] * 4096;
+					tmp->object_code[3] = disp / 256;
+					disp -= tmp->object_code[3] * 256;
+					tmp->object_code[4] = disp / 16;
+					disp -= tmp->object_code[4] * 16;
+					tmp->object_code[5] = disp;
+				}
+			}
+		}
+		//no symbol
+		else {
+			//no need to make object code
+			if(tmp->is_start || tmp->is_base || tmp->is_end || tmp->is_var) {
+				if(tmp->is_base) {
+					base_LOC = find_symbol(tmp->param2);	
+				}
+				tmp->object_len = 0;
+				tmp = tmp->next;
+				continue;
+			}
+			if(tmp->is_opcode) {
+				tmp->object_len = (tmp->format) * 2;
+				if(tmp->format == 1) {
+					int opval = opname_to_hex(tmp->param1);
+					tmp->object_code[0] = opval / 16;
+					tmp->object_code[1] = opval % 16;
+				}
+				else if(tmp->format == 2) {
+					int opval = opname_to_hex(tmp->param1);
+					int r1 = register_num(tmp->param2);
+					int r2 = register_num(tmp->param3);
+					tmp->object_code[0] = opval / 16;
+					tmp->object_code[1] = opval % 16;
+					tmp->object_code[2] = r1 == ERROR ? 0 : r1;
+					tmp->object_code[3] = r2 == ERROR ? 0 : r2;
+				}
+				else if(tmp->format == 3) {
+					int len = strlen(tmp->param1);
+					if(tmp->param1[len-1] == ',') tmp->param1[len-1] = 0;
+					len = strlen(tmp->param2);
+					if(tmp->param2[len-1] == ',') tmp->param2[len-1] = 0;
+					
+					int opval = opname_to_hex(tmp->param1);
+					int disp;
+					tmp->object_code[0] = opval / 16;
+					tmp->object_code[1] = opval % 16;
+					
+					int n = 0, i = 0, x = 0, b = 0, p = 0, e = 0;
+					bool flag = false;
+					//check addressing mode
+
+					//immediate addressing
+					if(tmp->param2[0] == '#') {
+						n = 0, i = 1;
+						disp = find_symbol(tmp->param2+1);
+						if(disp == ERROR) {
+							disp = str_to_int(tmp->param2+1);
+							flag = true;
+						}
+					}
+					//indirect addressing
+					else if(tmp->param2[0] == '@') {
+						n = 1, i = 0;
+						disp = find_symbol(tmp->param2+1);
+						if(disp == ERROR) {
+							disp = str_to_int(tmp->param2+1);
+							flag = true;
+						}
+					}
+					//simple addressing
+					else {
+						n = 1, i = 1;
+						disp = find_symbol(tmp->param2);
+						if(disp == ERROR) {
+							disp = str_to_int(tmp->param2);
+							flag = true;
+						}
+					}
+					
+					if(!flag) {
+						disp -= tmp->PC;
+						if(in_range(disp)) {
+							p = 1;
+						}
+						else {
+							disp += tmp->PC;
+							disp -= base_LOC;
+							b = 1;
+						}
+					}
+					if(tmp->param3[0] == 'X') {
+						x = 1;
+					}
+				
+					if(disp < 0 ) disp += 4096;
+					tmp->object_code[1] += n * 2;
+					tmp->object_code[1] += i;
+
+					tmp->object_code[2] = 8*x + 4*b + 2*p + e;
+					tmp->object_code[3] = disp / 256;
+					disp -= tmp->object_code[3] * 256;
+					tmp->object_code[4] = disp / 16;
+					disp -= tmp->object_code[4] * 16;
+					tmp->object_code[5] = disp;
+				}
+				else if(tmp->format == 4) {
+					int len = strlen(tmp->param1);
+					if(tmp->param1[len-1] == ',') tmp->param1[len-1] = 0;
+					len = strlen(tmp->param2);
+					if(tmp->param2[len-1] == ',') tmp->param2[len-1] = 0;
+				
+					int opval = opname_to_hex(tmp->param1+1);
+					int disp;
+					tmp->object_code[0] = opval / 16;
+					tmp->object_code[1] = opval % 16;
+					
+					int n = 0, i = 0, x = 0, b = 0, p = 0, e = 0;
+					//check addressing mode
+					//immediate addressing
+					if(tmp->param2[0] == '#') {
+						n = 0, i = 1;
+						disp = find_symbol(tmp->param2+1);
+						if(disp == ERROR) disp = str_to_int(tmp->param2+1);
+					}
+					//indirect addressing
+					else if(tmp->param2[0] == '@') {
+						n = 1, i = 0;
+						disp = find_symbol(tmp->param2+1);
+						if(disp == ERROR) disp = str_to_int(tmp->param2+1);
+					}
+					//simple addressing
+					else {
+						n = 1, i = 1;
+						disp = find_symbol(tmp->param2);
+						if(disp == ERROR) disp = str_to_int(tmp->param2);
+					}
+					if(tmp->param3[0] == 'X') {
+						x = 1;
+					}
+					
+					e = 1;
+					tmp->object_code[1] += n * 2;
+					tmp->object_code[1] += i;
+					tmp->object_code[2] = 8*x + 4*b + 2*p + e;
+					
+					tmp->object_code[3] = disp / 65536;
+					disp -= tmp->object_code[3] * 65536;
+					tmp->object_code[4] = disp / 4096;
+					disp -= tmp->object_code[4] * 4096;
+					tmp->object_code[5] = disp / 256;
+					disp -= tmp->object_code[5] * 256;
+					tmp->object_code[6] = disp / 16;
+					disp -= tmp->object_code[6] * 16;
+					tmp->object_code[7] = disp;
+				}
+			}
+			//constants
+			else {
+				int disp;
+				//BYTE
+				if(!strcmp(tmp->param1, "BYTE")) {
+					if(tmp->param2[0] == 'C') {
+						tmp->object_len = 6;
+						int c1 = tmp->param2[2];
+						int c2 = tmp->param2[3];
+						int c3 = tmp->param2[4];
+
+						tmp->object_code[0] = c1/16;
+						tmp->object_code[1] = c1%16;
+						tmp->object_code[2] = c2/16;
+						tmp->object_code[3] = c2%16;
+						tmp->object_code[4] = c3/16;
+						tmp->object_code[5] = c3%16;
+						
+					}
+					else if(tmp->param2[0] == 'X') {
+						tmp->object_len = 2;
+						tmp->object_code[0] = char_to_hex(tmp->param2[2]);
+						tmp->object_code[1] = char_to_hex(tmp->param2[3]);
+					}
+				}
+				//WORD
+				else {
+					tmp->object_len = 6;
+					disp = str_to_hex(tmp->param2);
+					tmp->object_code[0] = disp / 1048576;
+					disp -= tmp->object_code[0] * 1048576;
+					tmp->object_code[1] = disp / 65536;
+					disp -= tmp->object_code[1] * 65536;
+					tmp->object_code[2] = disp / 4096;
+					disp -= tmp->object_code[2] * 4096;
+					tmp->object_code[3] = disp / 256;
+					disp -= tmp->object_code[3] * 256;
+					tmp->object_code[4] = disp / 16;
+					disp -= tmp->object_code[4] * 16;
+					tmp->object_code[5] = disp;
+				}
+			}
+		}
+		tmp = tmp->next;
+	}
 	return SUCCESS;
 }
 
@@ -322,11 +719,18 @@ void make_lst(char* filename) {
 	struct line_node* tmp1 = line_root;
 	while(tmp1 != NULL) {
 		if(tmp1->is_base || tmp1->is_end) fprintf(fp, "%d\t\t%s\n", tmp1->idx, tmp1->raw);
-		else fprintf(fp, "%d\t%04X\t%s\n", tmp1->idx, tmp1->LOC, tmp1->raw);
+		else if(tmp1->is_start || tmp1->is_var) fprintf(fp, "%d\t%04X\t%s\n", tmp1->idx, tmp1->LOC, tmp1->raw);
+		else {
+			fprintf(fp, "%d\t%04X\t%-25s\t", tmp1->idx, tmp1->LOC, tmp1->raw);
+			int i;
+			for(i=0;i<tmp1->object_len;i++) fprintf(fp, "%X", tmp1->object_code[i]);
+			fprintf(fp, "\n");
+		}
 		tmp1 = tmp1->next;
 	}
 	fclose(fp);
 }
+
 void make_obj(char* filename){ 
 	FILE* fp;
 	int len = strlen(filename);
@@ -334,11 +738,53 @@ void make_obj(char* filename){
 	filename[len-2] = 'b';
 	filename[len-1] = 'j';
 	fp = fopen(filename, "w");
+	
+	//H header
+	struct line_node* tmp = line_root;
+	fprintf(fp, "H%-6s%06X%06X\n", tmp->param1, start_addr, prog_len);
+	
+	//T header
+	tmp = line_root;
 
-	struct line_node* tmp1 = line_root;
-	while(tmp1 != NULL) {
-		tmp1 = tmp1->next;
+	int arr[500], i;
+	
+	while(tmp != NULL) {
+		while(tmp != NULL && tmp->object_len == 0) tmp = tmp->next;
+		if(tmp == NULL) break;
+		int sLOC = tmp->LOC;
+		fprintf(fp, "T%06X", sLOC);
+
+
+		int cnt = 0;
+		while(tmp != NULL && tmp->object_len > 0) {
+			for(i = 0; i< tmp->object_len; i++) {
+				arr[cnt++] = tmp->object_code[i];
+			}
+			tmp = tmp->next;
+		}
+		fprintf(fp, "%02X", cnt/2);
+		for(i = 0; i < cnt; i++) fprintf(fp, "%X", arr[i]);
+		fprintf(fp, "\n");
 	}
+
+
+	//M header
+	tmp = line_root;
+	while(tmp!=NULL) {
+		if(tmp->format == 4 && !(tmp->is_symbol && tmp->param3[0] == '#') && !(!tmp->is_symbol && tmp->param2[0] == '#')) {
+			fprintf(fp, "M%06X05\n", tmp->LOC + 1);
+		}
+		tmp = tmp->next;
+	}
+
+	//E header
+	tmp = line_root;
+	int exec_LOC;
+
+	while(tmp->object_len == 0) tmp = tmp->next;
+	exec_LOC = tmp->LOC;
+	fprintf(fp, "E%06X", exec_LOC);
+
 	fclose(fp);
 	filename[len-3] = 'a';
 	filename[len-2] = 's';

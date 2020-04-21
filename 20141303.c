@@ -10,8 +10,13 @@ int main() {
 		printf("sicsim> ");
 		fgets(arg, ARG_LEN, stdin);
 		arg[(int)strlen(arg) - 1] = 0; //erase '\n'
-		if(!run(arg)) break;
-		printf("\n");
+		if(arg[0] == 0) {
+			undefined_command();
+		}
+		else {
+			if(!run(arg)) break;
+			printf("\n");
+		}
 	}
 	//clear history node and opcode table before exit
 	clear_history();

@@ -8,16 +8,18 @@ struct line_node* line_root = NULL;
 struct symbol_node* sym_tmp = NULL;
 struct line_node* line_tmp = NULL;
 
-int start_addr = 0;
-int base_LOC = 0;
-int LOCCTR = 0;
-int line = 5;
-int prog_len = 0;
+int start_addr = 0;	//start address
+int base_LOC = 0;	//base register
+int LOCCTR = 0;		//caculating current LOC
+int line = 5;	//line index
+int prog_len = 0;	//program length
 
+//return whether disp can be represented with 12 bits
 bool in_range(int disp) {
 	return disp >= -2048 && disp <= 2047;
 }
 
+//return corresponding register number
 int register_num(char* c) {
 	if(c == NULL) return ERROR;
 	if(!strcmp(c, "A")) return 0;
@@ -194,6 +196,7 @@ int pass1(char* filename) {
 		else if(cur_line[0] == '.') {
 			continue;
 		}
+		//if start node, init
 		else if(param2 != NULL && !strcmp(param2, "START")) {
 			new_->is_start = true;
 			start_addr = str_to_hex(param3);
@@ -205,6 +208,7 @@ int pass1(char* filename) {
 			line += 5;
 			continue;
 		}
+		//if base node, update base register value
 		else if(!strcmp(param1, "BASE")) {
 			new_->is_base = true;
 			new_->idx = line;
@@ -212,6 +216,7 @@ int pass1(char* filename) {
 			line += 5;
 			continue;
 		}
+		
 		else {
 			//have symbol
 			if(raw_line[0] != ' '){
@@ -335,13 +340,17 @@ int pass2(char* filename) {
 				tmp = tmp->next;
 				continue;
 			}
+			//opcode
 			if(tmp->is_opcode) {
 				tmp->object_len = (tmp->format) * 2;
+				//separate cases by format
+				//format 1: 1byte
 				if(tmp->format == 1) {
 					int opval = opname_to_hex(tmp->param2);
 					tmp->object_code[0] = opval / 16;
 					tmp->object_code[1] = opval % 16;
 				}
+				//format 2: 2bytes
 				else if(tmp->format == 2) {
 					int opval = opname_to_hex(tmp->param2);
 					int r1 = register_num(tmp->param3);
@@ -351,6 +360,7 @@ int pass2(char* filename) {
 					tmp->object_code[2] = r1 == ERROR ? 0 : r1;
 					tmp->object_code[3] = r2 == ERROR ? 0 : r2;
 				}
+				//format 3: 3bytes
 				else if(tmp->format == 3) {
 					int len = strlen(tmp->param2);
 					if(tmp->param2[len-1] == ',') tmp->param2[len-1] = 0;
@@ -393,6 +403,7 @@ int pass2(char* filename) {
 						}
 					}
 					
+					//if disp is constant, no need PC or base relative mode
 					if(!flag) {
 						disp -= tmp->PC;
 						if(in_range(disp)) {
@@ -404,10 +415,11 @@ int pass2(char* filename) {
 							b = 1;
 						}
 					}
+					
 					if(tmp->param4[0] == 'X') {
 						x = 1;
 					}
-				
+					//2's complement
 					if(disp < 0 ) disp += 4096;
 
 					tmp->object_code[1] += n * 2;
@@ -524,6 +536,8 @@ int pass2(char* filename) {
 				tmp = tmp->next;
 				continue;
 			}
+			//first 6 bits will be filled with opcode number
+			//next bits will be filled with n, i, x, b, p, e register value
 			if(tmp->is_opcode) {
 				tmp->object_len = (tmp->format) * 2;
 				if(tmp->format == 1) {
@@ -708,6 +722,7 @@ int pass2(char* filename) {
 	return SUCCESS;
 }
 
+//after parse assembly code and translate to object code, we'll write list file
 void make_lst(char* filename) {
 	FILE* fp;
 	int len = strlen(filename);
@@ -716,6 +731,7 @@ void make_lst(char* filename) {
 	filename[len-1] = 't';
 	fp = fopen(filename, "w");
 
+	//nothing to explain. Just format
 	struct line_node* tmp1 = line_root;
 	while(tmp1 != NULL) {
 		if(tmp1->is_base || tmp1->is_end) fprintf(fp, "%d\t\t%s\n", tmp1->idx, tmp1->raw);
@@ -731,6 +747,7 @@ void make_lst(char* filename) {
 	fclose(fp);
 }
 
+//finally, write obj file.
 void make_obj(char* filename){ 
 	FILE* fp;
 	int len = strlen(filename);
@@ -792,19 +809,23 @@ void make_obj(char* filename){
 }
 
 //assemble .asm file
+//shorten total flow of assembler
 int assemble(char* filename) {
+	//pass 1
 	int err = pass1(filename);
 	if(err == ERROR) {
 		clear_symbol(sym_tmp);
 		clear_line(line_tmp);
 		return ERROR;
 	}
+	//pass2
 	err = pass2(filename);
 	if(err == ERROR) {
 		clear_symbol(sym_tmp);
 		clear_line(line_tmp);
 		return ERROR;
 	}
+	//no error occurs
 	else {
 		clear_symbol(sym_root);
 		clear_line(line_root);
@@ -813,6 +834,7 @@ int assemble(char* filename) {
 		sym_tmp = NULL;
 		line_tmp = NULL;
 		
+		//make lst, obj files
 		make_lst(filename);
 		make_obj(filename);
 		printf("Successfully assemble %s!\n", filename);

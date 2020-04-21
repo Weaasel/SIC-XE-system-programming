@@ -1,10 +1,7 @@
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <dirent.h>
 #include <sys/stat.h>
-#include "memory.h"
-#include "opcode.h"
+#include "assembler.h"
 #define ARG_LEN 101
 #define COMMAND_NUM 20
 
@@ -46,8 +43,6 @@ void add_history(char* arg);
 void remove_history_tail();
 void clear_history();
 void history();
-int char_to_hex(char c);
-int str_to_hex(char* str);
 int make_command(char* str);
 int type(char* filename);
 bool run(char* arg);

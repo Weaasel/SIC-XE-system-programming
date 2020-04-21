@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "error.h"
+#include "base.h"
 #define MAX_VAL 255
 #define MAX_ADDR 1048575
 

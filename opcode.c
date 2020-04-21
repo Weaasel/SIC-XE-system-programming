@@ -44,6 +44,58 @@ void init_optable() {
 	return;
 }
 
+//find matching opcode with input opcode_name
+int opname_to_hex(char* str) {
+	if(str == NULL){
+		return ERROR;
+	}
+	//get hash index
+	int idx = (str[0] - 'A') % 20;
+	struct hash_node* tmp = hash_head[idx];
+	//find corresponding node while iterating
+	while(tmp != NULL) {
+		if(!strcmp(tmp->name, str)) {
+			return str_to_hex(tmp->code);
+		}
+		tmp = tmp->next;
+	}
+	return ERROR;
+}
+
+//find matching opcode format with input opcode_name
+int get_format(char* str) {
+	if(str == NULL){
+		return ERROR;
+	}
+	if(str[0] == '+') {	
+		//get hash index
+		int idx = (str[1] - 'A') % 20;
+		struct hash_node* tmp = hash_head[idx];
+		//find corresponding node while iterating
+		while(tmp != NULL) {
+			if(!strcmp(tmp->name, str + 1)) {
+				if(strcmp(tmp->data, "3/4") == 0) return 4;
+				else return ERROR;
+			}
+			tmp = tmp->next;
+		}
+		return ERROR;
+	}
+	//get hash index
+	int idx = (str[0] - 'A') % 20;
+	struct hash_node* tmp = hash_head[idx];
+	//find corresponding node while iterating
+	while(tmp != NULL) {
+		if(!strcmp(tmp->name, str)) {
+			if(strcmp(tmp->data, "1") == 0) return 1;
+			else if(strcmp(tmp->data, "2") == 0) return 2;
+			else return 3;
+		}
+		tmp = tmp->next;
+	}
+	return ERROR;
+}
+
 //output matching opcode with input opcode name
 int opcode(char* str) {
 	if(str == NULL){

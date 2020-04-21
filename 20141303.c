@@ -16,5 +16,6 @@ int main() {
 	//clear history node and opcode table before exit
 	clear_history();
 	clear_optable();
+	clear_assembler();
 	return 0;
 }

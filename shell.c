@@ -143,31 +143,6 @@ void history() {
 	return;
 }
 
-//convert each character with corresponding hexadecimal value
-int char_to_hex(char c) {
-	if('0' <= c && c <= '9') return c - '0';
-	if('A' <= c && c <= 'F') return c - 'A' + 10;
-	if('a' <= c && c <= 'f') return c - 'a' + 10;
-	return IMPOSSIBLE;
-}
-
-//convert string with corresponding hexadecimal value
-int str_to_hex(char* str) {
-	//EMPTY means there is no parameter
-	if(str==NULL) return EMPTY;
-
-	int res = 0, tmp;
-	int i;
-	for(i = 0; i < (int)strlen(str); i++) {
-		res *= 16;
-		tmp = char_to_hex(str[i]);
-		//IMPOSSIVLE means incorrect format hexadecimal like YJ
-		if(tmp == IMPOSSIBLE) return IMPOSSIBLE;
-		res += tmp;
-	}
-	return res;
-}
-
 //math string wuth corresponding command number. This is for switch statement in run()
 int make_command(char* str) {
 	int i;
@@ -187,6 +162,7 @@ int type(char* filename) {
 	}
 	char c;
 	while(fscanf(fp, "%c", &c) != EOF) printf("%c", c);
+	fclose(fp);
 	return SUCCESS;
 }
 
@@ -258,14 +234,16 @@ bool run(char* arg) {
 			opcodelist();
 			return true;
 		case assemble_:
-			printf("assemble\n");
+			err = assemble(param1);
+			if(err == ERROR) remove_history_tail();
 			return true;
 		case type_:
 			err = type(param1);
 			if(err == ERROR) remove_history_tail();
 			return true;
 		case symbol_:
-			printf("symbol\n");
+			err = symbol();
+			if(err == ERROR) remove_history_tail();
 			return true;
 		default:
 			remove_history_tail();

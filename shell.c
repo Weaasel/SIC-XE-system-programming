@@ -254,11 +254,11 @@ bool run(char* arg) {
 			if(err == ERROR) remove_history_tail();
 			return true;
 		case progaddr_:
-			err = progaddr();
+			err = progaddr(p1);
 			if(err == ERROR) remove_history_tail();
 			return true;
 		case loader_:
-			err = loader();
+			err = loader(param1, param2, param3);
 			if(err == ERROR) remove_history_tail();
 			return true;
 		case bp_:

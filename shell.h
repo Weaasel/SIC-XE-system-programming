@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <dirent.h>
 #include <sys/stat.h>
-#include "assembler.h"
+#include "loader.h"
 #define ARG_LEN 101
 #define COMMAND_NUM 24
 

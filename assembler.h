@@ -4,6 +4,7 @@
 //node structure for symbol table
 typedef struct symbol_node {
 	char name[20];	//symbol name
+	char idx[5];
 	int LOC;	//symbol location
 	struct symbol_node* next;	//pointer for struct linked list
 }symbol_node;

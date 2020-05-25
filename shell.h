@@ -3,7 +3,7 @@
 #include <sys/stat.h>
 #include "assembler.h"
 #define ARG_LEN 101
-#define COMMAND_NUM 20
+#define COMMAND_NUM 24
 
 //declare commands list to classify commands easier so that struct run() function clearly
 typedef enum {
@@ -26,7 +26,11 @@ typedef enum {
 	opcodelist_,
 	assemble_,
 	type_,
-	symbol_
+	symbol_,
+	progaddr_,
+	loader_,
+	bp_,
+	run_
 } command_list;
 
 //node structure and head pointer for history functions

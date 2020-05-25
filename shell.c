@@ -21,7 +21,11 @@ const char* valid_commands[COMMAND_NUM] = {
 	"opcodelist",
 	"assemble",
 	"type",
-	"symbol"
+	"symbol",
+	"progaddr",
+	"loader",
+	"bp",
+	"run"
 };
 
 //head node pointer for history list
@@ -42,6 +46,10 @@ void help() {
 	printf("assemble filename\n");
 	printf("type filename\n");
 	printf("symbol\n");
+	printf("progaddr address\n");
+	printf("loader filename\n");
+	printf("bp address\n");
+	printf("run\n");
 	return;
 }
 
@@ -243,6 +251,22 @@ bool run(char* arg) {
 			return true;
 		case symbol_:
 			err = symbol();
+			if(err == ERROR) remove_history_tail();
+			return true;
+		case progaddr_:
+			err = progaddr();
+			if(err == ERROR) remove_history_tail();
+			return true;
+		case loader_:
+			err = loader();
+			if(err == ERROR) remove_history_tail();
+			return true;
+		case bp_:
+			err = bp();
+			if(err == ERROR) remove_history_tail();
+			return true;
+		case run_:
+			err = runn();
 			if(err == ERROR) remove_history_tail();
 			return true;
 		default:
